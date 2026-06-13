@@ -16,6 +16,8 @@ if config.config_file_name is not None:
 
 # Override URL from environment — never read from alembic.ini in production
 database_url = os.environ["DATABASE_URL"]
+if database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 # Alembic uses the sync driver for migrations; swap asyncpg → psycopg2 style
 # but we keep asyncpg and use run_sync pattern below
 config.set_main_option("sqlalchemy.url", database_url)
