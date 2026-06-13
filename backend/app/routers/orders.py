@@ -55,7 +55,7 @@ async def create_order(
     db: AsyncSession = Depends(get_db)
 ) -> OrderResponse:
     order = await order_service.create_order(db, data)
-    background_tasks.add_task(order_service.send_order_confirmation_email_sync, order)
+    background_tasks.add_task(order_service.send_order_confirmation_email_background, order.id)
     return OrderResponse.model_validate(order)
 
 
