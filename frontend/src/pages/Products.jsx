@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useProducts } from '../hooks/useProducts';
 import Drawer from '../components/Drawer';
+import { toast } from 'react-toastify';
 
 function QtyCell({ qty }) {
   const cls = qty < 5 ? 'qty-critical' : qty < 10 ? 'qty-warning' : 'qty-ok';
@@ -70,12 +71,15 @@ export default function Products() {
       };
       if (editing) {
         await updateProduct(editing.id, { name: payload.name, price: payload.price, quantity: payload.quantity });
+        toast.success('Product updated successfully');
       } else {
         await createProduct(payload);
+        toast.success('Product created successfully');
       }
       closeDrawer();
     } catch (err) {
       setFormError(err.message);
+      toast.error(`Save failed: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -85,8 +89,9 @@ export default function Products() {
     if (!window.confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
     try {
       await deleteProduct(product.id);
+      toast.success('Product deleted successfully');
     } catch (err) {
-      alert(err.message);
+      toast.error(`Delete failed: ${err.message}`);
     }
   };
 

@@ -32,9 +32,13 @@ function AppShell({ title, children }) {
   );
 }
 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 export default function App() {
   return (
     <BrowserRouter>
+      <ToastContainer position="top-right" autoClose={3000} theme="dark" newestOnTop />
       <Routes>
         <Route path="/" element={
           <AppShell title="Dashboard"><Dashboard /></AppShell>

@@ -5,6 +5,7 @@ import { useProducts } from '../hooks/useProducts';
 import { useCustomers } from '../hooks/useCustomers';
 import StatusBadge from '../components/StatusBadge';
 import Drawer from '../components/Drawer';
+import { toast } from 'react-toastify';
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amount);
@@ -96,9 +97,11 @@ export default function Orders() {
         customer_id: Number(selectedCustomerId),
         items: orderItems.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
       });
+      toast.success('Order placed successfully!');
       closeDrawer();
     } catch (err) {
       setFormError(err.message);
+      toast.error(`Order creation failed: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -108,8 +111,9 @@ export default function Orders() {
     if (!window.confirm(`Cancel order #${order.id}? Stock will be restored.`)) return;
     try {
       await deleteOrder(order.id);
+      toast.success('Order cancelled successfully.');
     } catch (err) {
-      alert(err.message);
+      toast.error(`Cancellation failed: ${err.message}`);
     }
   };
 

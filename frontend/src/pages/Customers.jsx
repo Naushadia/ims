@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useCustomers } from '../hooks/useCustomers';
 import Drawer from '../components/Drawer';
+import { toast } from 'react-toastify';
 
 function formatExactDate(dateStr) {
   if (!dateStr) return '—';
@@ -75,12 +76,15 @@ export default function Customers() {
 
       if (form.id) {
         await updateCustomer(form.id, payload);
+        toast.success('Customer updated successfully');
       } else {
         await createCustomer(payload);
+        toast.success('Customer created successfully');
       }
       closeDrawer();
     } catch (err) {
       setFormError(err.message);
+      toast.error(`Save failed: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -90,8 +94,9 @@ export default function Customers() {
     if (!window.confirm(`Delete customer "${customer.full_name}"? This cannot be undone.`)) return;
     try {
       await deleteCustomer(customer.id);
+      toast.success('Customer deleted successfully');
     } catch (err) {
-      alert(err.message);
+      toast.error(`Delete failed: ${err.message}`);
     }
   };
 

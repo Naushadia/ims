@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getOrder, updateOrderStatus } from '../api/orders';
 import StatusBadge from '../components/StatusBadge';
+import { toast } from 'react-toastify';
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amount);
@@ -38,8 +39,9 @@ export default function OrderDetail() {
     try {
       const updated = await updateOrderStatus(id, newStatus);
       setOrder(updated);
+      toast.success(`Order status updated to ${newStatus.toUpperCase()}`);
     } catch (err) {
-      alert(err.message);
+      toast.error(`Failed to update status: ${err.message}`);
     } finally {
       setUpdating(false);
     }
@@ -57,8 +59,9 @@ export default function OrderDetail() {
       setOrder(updated);
       setShowCancelInput(false);
       setRemarks('');
+      toast.success('Order cancelled successfully.');
     } catch (err) {
-      alert(err.message);
+      toast.error(`Cancellation failed: ${err.message}`);
     } finally {
       setUpdating(false);
     }
