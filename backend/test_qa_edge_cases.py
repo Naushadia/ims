@@ -114,16 +114,22 @@ async def test_order_transitions_and_status():
     async with AsyncSessionLocal() as db:
         order_data = OrderCreate(
             customer_id=customer_id,
-            items=[OrderItemCreate(product_id=product_id, quantity=1)]
+            items=[OrderItemCreate(product_id=product_id, quantity=1)],
+            email_note="Deliver to back door please."
         )
         order = await order_service.create_order(db, order_data)
         order_id = order.id
-        print(f"Placed Order: ID={order.id}, Status={order.status}, Total={order.total_amount}")
+        print(f"Placed Order: ID={order.id}, Status={order.status}, Total={order.total_amount}, Email Note={order.email_note}")
 
         if order.status == "created":
             print("PASS: Default order status is 'created'.")
         else:
             print(f"FAIL: Default order status is '{order.status}'")
+
+        if order.email_note == "Deliver to back door please.":
+            print("PASS: email_note was correctly saved to order.")
+        else:
+            print(f"FAIL: email_note was '{order.email_note}'")
 
     # 3. Transition: created -> pending - should pass
     async with AsyncSessionLocal() as db:

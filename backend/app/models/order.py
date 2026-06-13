@@ -43,6 +43,7 @@ class Order(Base):
     )
 
     cancellation_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    email_note: Mapped[str | None] = mapped_column(String(1000), nullable=True)
 
     # Relationships
     customer: Mapped["Customer"] = relationship("Customer", lazy="joined")

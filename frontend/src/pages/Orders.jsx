@@ -30,6 +30,7 @@ export default function Orders() {
   const [itemProductId, setItemProductId]            = useState('');
   const [itemQty, setItemQty]                        = useState(1);
   const [itemError, setItemError]                    = useState('');
+  const [emailNote, setEmailNote]                    = useState('');
 
   const filtered = orders.filter((o) =>
     statusFilter === 'All' || o.status === statusFilter.toLowerCase()
@@ -40,6 +41,7 @@ export default function Orders() {
     setOrderItems([]);
     setItemProductId('');
     setItemQty(1);
+    setEmailNote('');
     setFormError('');
     setItemError('');
     setDrawerOpen(true);
@@ -47,6 +49,7 @@ export default function Orders() {
 
   const closeDrawer = () => {
     setDrawerOpen(false);
+    setEmailNote('');
     setFormError('');
     setItemError('');
   };
@@ -96,6 +99,7 @@ export default function Orders() {
       await createOrder({
         customer_id: Number(selectedCustomerId),
         items: orderItems.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
+        email_note: emailNote.trim() || null,
       });
       toast.success('Order placed successfully!');
       closeDrawer();
@@ -226,6 +230,17 @@ export default function Orders() {
               <option key={c.id} value={c.id}>{c.full_name} ({c.email})</option>
             ))}
           </select>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Email Note <span className="text-meta">(optional)</span></label>
+          <textarea
+            className="form-input"
+            value={emailNote}
+            onChange={(e) => setEmailNote(e.target.value)}
+            placeholder="Add an optional note to include in the order confirmation email..."
+            style={{ padding: 8, height: 70, resize: 'vertical' }}
+          />
         </div>
 
         {/* Section 2: Add Items */}

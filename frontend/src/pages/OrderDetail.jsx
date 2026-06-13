@@ -144,6 +144,18 @@ export default function OrderDetail() {
                 <strong>Cancellation Remarks:</strong> {order.cancellation_reason || 'No remarks provided.'}
               </div>
             )}
+
+            {/* Display email note if present */}
+            {order.email_note && (
+              <div style={{ marginTop: 20, padding: '16px', background: 'rgba(217, 119, 6, 0.05)', borderLeft: '4px solid var(--primary)', borderRadius: '4px' }}>
+                <strong style={{ display: 'block', fontSize: '11px', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '4px', letterSpacing: '0.05em' }}>
+                  Email Confirmation Note
+                </strong>
+                <span style={{ fontSize: '14px', fontStyle: 'italic', color: 'var(--text-secondary)' }}>
+                  "{order.email_note}"
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Right — Customer + Summary */}
@@ -185,46 +197,32 @@ export default function OrderDetail() {
               </div>
             </div>
 
-            {/* Transition Controls */}
-            {!updating && !showCancelInput && order.status === 'created' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <button className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => handleStatusUpdate('pending')}>
-                  Mark as Pending
-                </button>
-                <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => handleStatusUpdate('confirmed')}>
-                  Confirm Order
-                </button>
-                <button className="btn btn-success" style={{ width: '100%', justifyContent: 'center', background: 'var(--success)', color: 'white', border: '1px solid var(--success)' }} onClick={() => handleStatusUpdate('completed')}>
-                  Complete Order
-                </button>
-                <button className="btn btn-danger-outline" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowCancelInput(true)}>
-                  Cancel Order
-                </button>
-              </div>
-            )}
-
-            {!updating && !showCancelInput && order.status === 'pending' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => handleStatusUpdate('confirmed')}>
-                  Confirm Order
-                </button>
-                <button className="btn btn-success" style={{ width: '100%', justifyContent: 'center', background: 'var(--success)', color: 'white', border: '1px solid var(--success)' }} onClick={() => handleStatusUpdate('completed')}>
-                  Complete Order
-                </button>
-                <button className="btn btn-danger-outline" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowCancelInput(true)}>
-                  Cancel Order
-                </button>
-              </div>
-            )}
-
-            {!updating && !showCancelInput && order.status === 'confirmed' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <button className="btn btn-success" style={{ width: '100%', justifyContent: 'center', background: 'var(--success)', color: 'white', border: '1px solid var(--success)' }} onClick={() => handleStatusUpdate('completed')}>
-                  Complete Order (Deliver)
-                </button>
-                <button className="btn btn-danger-outline" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowCancelInput(true)}>
-                  Cancel Order
-                </button>
+            {/* Transition Controls - Selector Dropdown (Combo Box) */}
+            {!updating && !showCancelInput && order.status !== 'completed' && order.status !== 'cancelled' && (
+              <div className="detail-card" style={{ marginTop: 0 }}>
+                <div className="detail-card-title">Change Order Status</div>
+                <div className="form-group" style={{ margin: '8px 0 0' }}>
+                  <select
+                    className="form-select"
+                    value={order.status}
+                    onChange={(e) => {
+                      const newStatus = e.target.value;
+                      if (newStatus === 'cancelled') {
+                        setShowCancelInput(true);
+                      } else {
+                        handleStatusUpdate(newStatus);
+                      }
+                    }}
+                    disabled={updating}
+                    style={{ width: '100%', cursor: 'pointer', padding: '10px' }}
+                  >
+                    <option value="created" disabled={order.status !== 'created'}>Created</option>
+                    <option value="pending" disabled={order.status !== 'created' && order.status !== 'pending'}>Pending</option>
+                    <option value="confirmed" disabled={order.status === 'confirmed' || (order.status !== 'created' && order.status !== 'pending')}>Confirmed</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
               </div>
             )}
 

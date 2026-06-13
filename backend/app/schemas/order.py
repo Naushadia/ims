@@ -14,6 +14,7 @@ class OrderItemCreate(BaseModel):
 class OrderCreate(BaseModel):
     customer_id: int = Field(..., gt=0)
     items: list[OrderItemCreate] = Field(..., min_length=1)
+    email_note: str | None = Field(default=None, max_length=1000)
 
 
 # ── Response schemas ──────────────────────────────────────────────────────────
@@ -55,6 +56,7 @@ class OrderResponse(BaseModel):
     total_amount: Decimal
     items: list[OrderItemResponse]
     cancellation_reason: str | None
+    email_note: str | None
     created_at: datetime
     updated_at: datetime
 

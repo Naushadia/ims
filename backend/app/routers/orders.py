@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -50,9 +50,12 @@ async def get_order(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_order(
-    data: OrderCreate, db: AsyncSession = Depends(get_db)
+    data: OrderCreate,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db)
 ) -> OrderResponse:
     order = await order_service.create_order(db, data)
+    background_tasks.add_task(order_service.send_order_confirmation_email_sync, order)
     return OrderResponse.model_validate(order)
 
 
