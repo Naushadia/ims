@@ -24,8 +24,8 @@ class Order(Base):
     status: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
-        default="pending",
-        server_default="pending",
+        default="created",
+        server_default="created",
     )
     total_amount: Mapped[Decimal] = mapped_column(
         Numeric(10, 2),
@@ -55,7 +55,7 @@ class Order(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "status IN ('pending', 'confirmed', 'completed', 'cancelled')",
+            "status IN ('created', 'confirmed', 'completed', 'cancelled')",
             name="ck_orders_status_valid",
         ),
         CheckConstraint("total_amount >= 0", name="ck_orders_total_nonneg"),

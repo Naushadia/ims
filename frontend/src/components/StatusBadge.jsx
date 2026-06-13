@@ -4,6 +4,7 @@
  */
 export default function StatusBadge({ status }) {
   const cls = {
+    created: 'status status-pending',
     pending: 'status status-pending',
     confirmed: 'status status-confirmed',
     cancelled: 'status status-cancelled',

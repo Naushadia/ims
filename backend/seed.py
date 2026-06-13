@@ -63,10 +63,10 @@ async def seed_data():
             item1_2 = OrderItem(order_id=order1.id, product_id=products[1].id, quantity=1, unit_price=products[1].price)
             session.add_all([item1_1, item1_2])
 
-            # Order 2: Pending order for Priya
+            # Order 2: Created order for Priya
             order2 = Order(
                 customer_id=customers[1].id,
-                status="pending",
+                status="created",
                 total_amount=Decimal("30398.00"),
                 created_at=now - timedelta(days=2),
                 updated_at=now - timedelta(days=2),

@@ -27,10 +27,16 @@ export function useCustomers() {
     return customer;
   };
 
+  const updateCustomer = async (id, data) => {
+    const customer = await api.updateCustomer(id, data);
+    await refetch();
+    return customer;
+  };
+
   const deleteCustomer = async (id) => {
     await api.deleteCustomer(id);
     await refetch();
   };
 
-  return { customers, loading, error, refetch, createCustomer, deleteCustomer };
+  return { customers, loading, error, refetch, createCustomer, updateCustomer, deleteCustomer };
 }

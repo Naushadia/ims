@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.schemas.customer import CustomerCreate, CustomerListResponse, CustomerResponse
+from app.schemas.customer import CustomerCreate, CustomerListResponse, CustomerResponse, CustomerUpdate
 from app.services import customer_service
 
 router = APIRouter()
@@ -27,6 +27,14 @@ async def create_customer(
     data: CustomerCreate, db: AsyncSession = Depends(get_db)
 ) -> CustomerResponse:
     customer = await customer_service.create_customer(db, data)
+    return CustomerResponse.model_validate(customer)
+
+
+@router.put("/{customer_id}", response_model=CustomerResponse, status_code=status.HTTP_200_OK)
+async def update_customer(
+    customer_id: int, data: CustomerUpdate, db: AsyncSession = Depends(get_db)
+) -> CustomerResponse:
+    customer = await customer_service.update_customer(db, customer_id, data)
     return CustomerResponse.model_validate(customer)
 
 

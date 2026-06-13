@@ -183,7 +183,7 @@ export default function OrderDetail() {
             </div>
 
             {/* Transition Controls */}
-            {!updating && !showCancelInput && order.status === 'pending' && (
+            {!updating && !showCancelInput && order.status === 'created' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => handleStatusUpdate('confirmed')}>
                   Confirm Order

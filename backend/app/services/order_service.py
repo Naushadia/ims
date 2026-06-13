@@ -53,11 +53,18 @@ async def create_order(db: AsyncSession, data: OrderCreate) -> Order:
         customer_result = await db.execute(
             select(Customer).where(Customer.id == data.customer_id)
         )
-        if customer_result.scalar_one_or_none() is None:
+        customer = customer_result.scalar_one_or_none()
+        if customer is None:
             raise AppError(
                 message=f"Customer with ID {data.customer_id} not found.",
                 code="CUSTOMER_NOT_FOUND",
                 status_code=404,
+            )
+        if customer.status != "active":
+            raise AppError(
+                message=f"Cannot place order — customer '{customer.full_name}' is inactive.",
+                code="INACTIVE_CUSTOMER",
+                status_code=400,
             )
 
         # 2 — Validate all products and check stock (collect before mutating)
@@ -106,7 +113,7 @@ async def create_order(db: AsyncSession, data: OrderCreate) -> Order:
             product_map[product_id].quantity -= requested_qty
 
         # 4 — Create order
-        order = Order(customer_id=data.customer_id, status="pending", total_amount=Decimal("0.00"))
+        order = Order(customer_id=data.customer_id, status="created", total_amount=Decimal("0.00"))
         db.add(order)
         await db.flush()  # get order.id without committing
 
@@ -134,14 +141,14 @@ async def create_order(db: AsyncSession, data: OrderCreate) -> Order:
 async def delete_order(db: AsyncSession, order_id: int) -> None:
     """
     Cancel/delete an order.
-    If the order is 'pending', restore stock for all its items.
+    If the order is 'created', restore stock for all its items.
     """
     async with db.begin():
         order_result = await db.execute(
             select(Order)
             .options(selectinload(Order.items))
             .where(Order.id == order_id)
-            .with_for_update()
+            .with_for_update(of=Order)
         )
         order = order_result.scalar_one_or_none()
         if order is None:
@@ -151,8 +158,8 @@ async def delete_order(db: AsyncSession, order_id: int) -> None:
                 status_code=404,
             )
 
-        # Restore stock only for pending orders
-        if order.status == "pending":
+        # Restore stock only for created orders
+        if order.status == "created":
             for item in order.items:
                 product_result = await db.execute(
                     select(Product)
@@ -200,8 +207,8 @@ async def update_order_status(
 ) -> Order:
     """
     Update order status with business rules:
-    - Allowed transitions: pending -> confirmed, pending -> cancelled, confirmed -> completed, confirmed -> cancelled
-    - Restore stock on cancellation from pending or confirmed states
+    - Allowed transitions: created -> confirmed, created -> cancelled, confirmed -> completed, confirmed -> cancelled
+    - Restore stock on cancellation from created or confirmed states
     - Require remarks/reason for cancellation
     """
     async with db.begin():
@@ -210,7 +217,7 @@ async def update_order_status(
             select(Order)
             .options(selectinload(Order.items))
             .where(Order.id == order_id)
-            .with_for_update()
+            .with_for_update(of=Order)
         )
         order = order_result.scalar_one_or_none()
         if order is None:
@@ -223,7 +230,7 @@ async def update_order_status(
         old_status = order.status.lower()
         new_status = status.lower()
 
-        if new_status not in ["pending", "confirmed", "completed", "cancelled"]:
+        if new_status not in ["created", "confirmed", "completed", "cancelled"]:
             raise AppError(
                 message=f"Invalid status '{status}'.",
                 code="INVALID_STATUS",
@@ -242,9 +249,9 @@ async def update_order_status(
             )
 
         # Transition validation
-        if old_status == "pending" and new_status == "completed":
+        if old_status == "created" and new_status == "completed":
             raise AppError(
-                message="Cannot complete a pending order directly. Confirm it first.",
+                message="Cannot complete a created order directly. Confirm it first.",
                 code="INVALID_TRANSITION",
                 status_code=400,
             )

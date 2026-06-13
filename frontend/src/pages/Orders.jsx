@@ -10,7 +10,7 @@ function formatCurrency(amount) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amount);
 }
 
-const STATUS_FILTERS = ['All', 'Pending', 'Confirmed', 'Cancelled'];
+const STATUS_FILTERS = ['All', 'Created', 'Confirmed', 'Cancelled'];
 
 export default function Orders() {
   const navigate = useNavigate();
@@ -177,7 +177,7 @@ export default function Orders() {
                         >
                           View
                         </button>
-                        {o.status === 'pending' && (
+                        {o.status === 'created' && (
                           <button className="action-link action-link-delete" onClick={() => handleCancel(o)}>
                             Cancel
                           </button>

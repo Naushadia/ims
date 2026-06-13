@@ -2,21 +2,23 @@ import { useState } from 'react';
 import { useCustomers } from '../hooks/useCustomers';
 import Drawer from '../components/Drawer';
 
-function relativeDate(dateStr) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const days  = Math.floor(diff / 86400000);
-  if (days === 0) return 'Today';
-  if (days === 1) return 'Yesterday';
-  if (days < 30)  return `${days} days ago`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
-  return `${Math.floor(months / 12)} year${Math.floor(months / 12) > 1 ? 's' : ''} ago`;
+function formatExactDate(dateStr) {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  return date.toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
 }
 
-const EMPTY_FORM = { full_name: '', email: '', phone: '' };
+const EMPTY_FORM = { id: null, full_name: '', email: '', phone: '', status: 'active' };
 
 export default function Customers() {
-  const { customers, loading, error, createCustomer, deleteCustomer } = useCustomers();
+  const { customers, loading, error, createCustomer, updateCustomer, deleteCustomer } = useCustomers();
 
   const [search, setSearch]         = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -31,6 +33,18 @@ export default function Customers() {
 
   const openCreate = () => {
     setForm(EMPTY_FORM);
+    setFormError('');
+    setDrawerOpen(true);
+  };
+
+  const openEdit = (customer) => {
+    setForm({
+      id: customer.id,
+      full_name: customer.full_name,
+      email: customer.email,
+      phone: customer.phone || '',
+      status: customer.status || 'active',
+    });
     setFormError('');
     setDrawerOpen(true);
   };
@@ -52,11 +66,18 @@ export default function Customers() {
 
     setSaving(true);
     try {
-      await createCustomer({
+      const payload = {
         full_name: form.full_name.trim(),
         email: form.email.trim().toLowerCase(),
         phone: form.phone.trim() || null,
-      });
+        status: form.status,
+      };
+
+      if (form.id) {
+        await updateCustomer(form.id, payload);
+      } else {
+        await createCustomer(payload);
+      }
       closeDrawer();
     } catch (err) {
       setFormError(err.message);
@@ -113,14 +134,15 @@ export default function Customers() {
                   <th>Phone</th>
                   <th>Status</th>
                   <th>Joined</th>
+                  <th>Last Updated</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr className="loading-row"><td colSpan={7}>Loading…</td></tr>
+                  <tr className="loading-row"><td colSpan={8}>Loading…</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={7} className="empty-state">No customers found.</td></tr>
+                  <tr><td colSpan={8} className="empty-state">No customers found.</td></tr>
                 ) : filtered.map((c, i) => (
                   <tr key={c.id}>
                     <td className="text-meta" style={{ fontSize: '12px' }}>{i + 1}</td>
@@ -132,11 +154,17 @@ export default function Customers() {
                         {c.status ? c.status.charAt(0).toUpperCase() + c.status.slice(1).toLowerCase() : 'Active'}
                       </span>
                     </td>
-                    <td className="text-meta" style={{ fontSize: '12px' }} title={c.created_at ? `Created: ${new Date(c.created_at).toLocaleString('en-IN')}` : ''}>
-                      {relativeDate(c.created_at)}
+                    <td className="text-meta" style={{ fontSize: '12px' }}>
+                      {formatExactDate(c.created_at)}
+                    </td>
+                    <td className="text-meta" style={{ fontSize: '12px' }}>
+                      {formatExactDate(c.updated_at)}
                     </td>
                     <td>
-                      <button className="action-link action-link-delete" onClick={() => handleDelete(c)}>Delete</button>
+                      <div style={{ display: 'flex', gap: '14px' }}>
+                        <button className="action-link action-link-view" onClick={() => openEdit(c)}>Edit</button>
+                        <button className="action-link action-link-delete" onClick={() => handleDelete(c)}>Delete</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -149,13 +177,13 @@ export default function Customers() {
       <Drawer
         open={drawerOpen}
         onClose={closeDrawer}
-        title="Add Customer"
+        title={form.id ? "Edit Customer" : "Add Customer"}
         size="sm"
         footer={
           <>
             <button className="btn-ghost" onClick={closeDrawer}>Cancel</button>
             <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving…' : 'Add Customer'}
+              {saving ? 'Saving…' : (form.id ? 'Save Changes' : 'Add Customer')}
             </button>
           </>
         }
@@ -176,6 +204,14 @@ export default function Customers() {
         <div className="form-group">
           <label className="form-label">Phone <span className="text-meta">(optional)</span></label>
           <input className="form-input" name="phone" type="tel" value={form.phone} onChange={handleField} placeholder="+91 98765 43210" />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Status</label>
+          <select className="form-select" name="status" value={form.status} onChange={handleField}>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
         </div>
       </Drawer>
     </div>
