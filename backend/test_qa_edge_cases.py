@@ -125,30 +125,19 @@ async def test_order_transitions_and_status():
         else:
             print(f"FAIL: Default order status is '{order.status}'")
 
-    # 3. Transition: created -> completed (directly) - should fail
+    # 3. Transition: created -> pending - should pass
     async with AsyncSessionLocal() as db:
-        try:
-            await order_service.update_order_status(db, order_id, "completed")
-            print("FAIL: Allowed direct transitions from 'created' to 'completed'!")
-        except AppError as e:
-            if e.code == "INVALID_TRANSITION":
-                print("PASS: Correctly blocked 'created' -> 'completed' transition.")
-            else:
-                print(f"FAIL: Expected INVALID_TRANSITION, got {e.code}")
-
-    # 4. Transition: created -> confirmed - should pass
-    async with AsyncSessionLocal() as db:
-        order = await order_service.update_order_status(db, order_id, "confirmed")
-        if order.status == "confirmed":
-            print("PASS: Successfully transitioned 'created' -> 'confirmed'.")
+        order = await order_service.update_order_status(db, order_id, "pending")
+        if order.status == "pending":
+            print("PASS: Successfully transitioned 'created' -> 'pending'.")
         else:
             print(f"FAIL: Order status is {order.status}")
 
-    # 5. Transition: confirmed -> completed - should pass
+    # 4. Transition: pending -> completed - should pass
     async with AsyncSessionLocal() as db:
         order = await order_service.update_order_status(db, order_id, "completed")
         if order.status == "completed":
-            print("PASS: Successfully transitioned 'confirmed' -> 'completed'.")
+            print("PASS: Successfully transitioned 'pending' -> 'completed'.")
         else:
             print(f"FAIL: Order status is {order.status}")
 

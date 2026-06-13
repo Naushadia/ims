@@ -188,8 +188,28 @@ export default function OrderDetail() {
             {/* Transition Controls */}
             {!updating && !showCancelInput && order.status === 'created' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <button className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => handleStatusUpdate('pending')}>
+                  Mark as Pending
+                </button>
                 <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => handleStatusUpdate('confirmed')}>
                   Confirm Order
+                </button>
+                <button className="btn btn-success" style={{ width: '100%', justifyContent: 'center', background: 'var(--success)', color: 'white', border: '1px solid var(--success)' }} onClick={() => handleStatusUpdate('completed')}>
+                  Complete Order
+                </button>
+                <button className="btn btn-danger-outline" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowCancelInput(true)}>
+                  Cancel Order
+                </button>
+              </div>
+            )}
+
+            {!updating && !showCancelInput && order.status === 'pending' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => handleStatusUpdate('confirmed')}>
+                  Confirm Order
+                </button>
+                <button className="btn btn-success" style={{ width: '100%', justifyContent: 'center', background: 'var(--success)', color: 'white', border: '1px solid var(--success)' }} onClick={() => handleStatusUpdate('completed')}>
+                  Complete Order
                 </button>
                 <button className="btn btn-danger-outline" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowCancelInput(true)}>
                   Cancel Order
@@ -199,7 +219,7 @@ export default function OrderDetail() {
 
             {!updating && !showCancelInput && order.status === 'confirmed' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => handleStatusUpdate('completed')}>
+                <button className="btn btn-success" style={{ width: '100%', justifyContent: 'center', background: 'var(--success)', color: 'white', border: '1px solid var(--success)' }} onClick={() => handleStatusUpdate('completed')}>
                   Complete Order (Deliver)
                 </button>
                 <button className="btn btn-danger-outline" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowCancelInput(true)}>

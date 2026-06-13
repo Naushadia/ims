@@ -55,7 +55,7 @@ class Order(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "status IN ('created', 'confirmed', 'completed', 'cancelled')",
+            "status IN ('created', 'pending', 'confirmed', 'completed', 'cancelled')",
             name="ck_orders_status_valid",
         ),
         CheckConstraint("total_amount >= 0", name="ck_orders_total_nonneg"),

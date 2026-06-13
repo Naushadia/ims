@@ -158,8 +158,8 @@ async def delete_order(db: AsyncSession, order_id: int) -> None:
                 status_code=404,
             )
 
-        # Restore stock only for created orders
-        if order.status == "created":
+        # Restore stock only for created/pending/confirmed orders
+        if order.status in ("created", "pending", "confirmed"):
             for item in order.items:
                 product_result = await db.execute(
                     select(Product)
@@ -230,7 +230,7 @@ async def update_order_status(
         old_status = order.status.lower()
         new_status = status.lower()
 
-        if new_status not in ["created", "confirmed", "completed", "cancelled"]:
+        if new_status not in ["created", "pending", "confirmed", "completed", "cancelled"]:
             raise AppError(
                 message=f"Invalid status '{status}'.",
                 code="INVALID_STATUS",
@@ -248,13 +248,7 @@ async def update_order_status(
                 status_code=400,
             )
 
-        # Transition validation
-        if old_status == "created" and new_status == "completed":
-            raise AppError(
-                message="Cannot complete a created order directly. Confirm it first.",
-                code="INVALID_TRANSITION",
-                status_code=400,
-            )
+        # Transition validation (removed direct completion block to allow direct created -> completed)
 
         # Handle cancellation: restore stock
         if new_status == "cancelled":
