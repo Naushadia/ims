@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getOrder } from '../api/orders';
-import { deleteOrder } from '../api/orders';
+import { getOrder, updateOrderStatus } from '../api/orders';
 import StatusBadge from '../components/StatusBadge';
 
 function formatCurrency(amount) {
@@ -14,22 +13,54 @@ export default function OrderDetail() {
   const [order, setOrder]     = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
+  
+  // Status transition states
+  const [updating, setUpdating] = useState(false);
+  const [showCancelInput, setShowCancelInput] = useState(false);
+  const [remarks, setRemarks] = useState('');
+  const [remarksError, setRemarksError] = useState('');
 
-  useEffect(() => {
+  const fetchOrder = () => {
     setLoading(true);
     getOrder(id)
       .then(setOrder)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchOrder();
   }, [id]);
 
-  const handleCancel = async () => {
-    if (!window.confirm('Cancel this order? Stock will be restored.')) return;
+  const handleStatusUpdate = async (newStatus) => {
+    if (!window.confirm(`Update order status to "${newStatus.toUpperCase()}"?`)) return;
+    setUpdating(true);
     try {
-      await deleteOrder(id);
-      navigate('/orders');
+      const updated = await updateOrderStatus(id, newStatus);
+      setOrder(updated);
     } catch (err) {
       alert(err.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleCancelSubmit = async () => {
+    if (!remarks.trim()) {
+      setRemarksError('Please enter a cancellation reason.');
+      return;
+    }
+    setRemarksError('');
+    setUpdating(true);
+    try {
+      const updated = await updateOrderStatus(id, 'cancelled', remarks.trim());
+      setOrder(updated);
+      setShowCancelInput(false);
+      setRemarks('');
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -103,6 +134,13 @@ export default function OrderDetail() {
                 </table>
               </div>
             </div>
+
+            {/* Display cancellation reason if cancelled */}
+            {order.status === 'cancelled' && (
+              <div className="alert alert-error" style={{ marginTop: 20 }}>
+                <strong>Cancellation Remarks:</strong> {order.cancellation_reason || 'No remarks provided.'}
+              </div>
+            )}
           </div>
 
           {/* Right — Customer + Summary */}
@@ -144,11 +182,55 @@ export default function OrderDetail() {
               </div>
             </div>
 
-            {/* Cancel button — only for pending */}
-            {order.status === 'pending' && (
-              <button className="btn btn-danger-outline" style={{ width: '100%' }} onClick={handleCancel}>
-                Cancel Order
-              </button>
+            {/* Transition Controls */}
+            {!updating && !showCancelInput && order.status === 'pending' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => handleStatusUpdate('confirmed')}>
+                  Confirm Order
+                </button>
+                <button className="btn btn-danger-outline" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowCancelInput(true)}>
+                  Cancel Order
+                </button>
+              </div>
+            )}
+
+            {!updating && !showCancelInput && order.status === 'confirmed' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => handleStatusUpdate('completed')}>
+                  Complete Order (Deliver)
+                </button>
+                <button className="btn btn-danger-outline" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowCancelInput(true)}>
+                  Cancel Order
+                </button>
+              </div>
+            )}
+
+            {showCancelInput && (
+              <div className="detail-card" style={{ border: '1px solid var(--error)' }}>
+                <div className="detail-card-title" style={{ color: 'var(--error)' }}>Cancel Order Remarks</div>
+                <div className="form-group" style={{ margin: '8px 0 12px' }}>
+                  <textarea 
+                    className="form-input" 
+                    placeholder="Enter cancellation reason..." 
+                    style={{ height: 80, padding: 8, resize: 'vertical' }}
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                  />
+                  {remarksError && <div className="form-error">{remarksError}</div>}
+                </div>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                  <button className="btn btn-secondary btn-sm" onClick={() => { setShowCancelInput(false); setRemarks(''); setRemarksError(''); }}>
+                    Abort
+                  </button>
+                  <button className="btn btn-primary btn-sm" style={{ background: 'var(--error)', borderColor: 'var(--error)' }} onClick={handleCancelSubmit}>
+                    Confirm Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {updating && (
+              <div className="empty-state" style={{ padding: 12 }}>Updating order...</div>
             )}
           </div>
         </div>

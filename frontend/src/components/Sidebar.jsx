@@ -51,9 +51,9 @@ const NAV_ITEMS = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ mobileOpen, onClose }) {
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${mobileOpen ? ' mobile-open' : ''}`}>
       <div className="sidebar-brand">
         <div className="sidebar-logo">
           <div className="sidebar-logo-mark">
@@ -77,6 +77,7 @@ export default function Sidebar() {
             key={to}
             to={to}
             end={to === '/'}
+            onClick={onClose}
             className={({ isActive }) =>
               `sidebar-nav-item${isActive ? ' active' : ''}`
             }

@@ -24,7 +24,9 @@ class CustomerResponse(BaseModel):
     full_name: str
     email: str
     phone: str | None
+    status: str
     created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}
 

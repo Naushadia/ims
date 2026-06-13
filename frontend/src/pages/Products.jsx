@@ -139,7 +139,12 @@ export default function Products() {
                 ) : filtered.map((p, i) => (
                   <tr key={p.id}>
                     <td className="text-meta" style={{ fontSize: '12px' }}>{i + 1}</td>
-                    <td style={{ fontWeight: 500 }}>{p.name}</td>
+                    <td 
+                      style={{ fontWeight: 500 }}
+                      title={`Created: ${new Date(p.created_at).toLocaleString('en-IN')}\nUpdated: ${new Date(p.updated_at).toLocaleString('en-IN')}`}
+                    >
+                      {p.name}
+                    </td>
                     <td className="td-mono">{p.sku}</td>
                     <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
                       ₹{parseFloat(p.price).toFixed(2)}

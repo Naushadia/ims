@@ -42,6 +42,8 @@ class Order(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
+    cancellation_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
     # Relationships
     customer: Mapped["Customer"] = relationship("Customer", lazy="joined")
     items: Mapped[list["OrderItem"]] = relationship(
@@ -53,7 +55,7 @@ class Order(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "status IN ('pending', 'confirmed', 'cancelled')",
+            "status IN ('pending', 'confirmed', 'completed', 'cancelled')",
             name="ck_orders_status_valid",
         ),
         CheckConstraint("total_amount >= 0", name="ck_orders_total_nonneg"),

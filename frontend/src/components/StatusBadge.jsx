@@ -7,6 +7,7 @@ export default function StatusBadge({ status }) {
     pending: 'status status-pending',
     confirmed: 'status status-confirmed',
     cancelled: 'status status-cancelled',
+    completed: 'status status-completed',
   }[status?.toLowerCase()] ?? 'status text-secondary';
 
   const label = status

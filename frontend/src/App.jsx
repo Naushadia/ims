@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -15,11 +16,16 @@ const PAGE_TITLES = {
 };
 
 function AppShell({ title, children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="app-shell">
-      <Sidebar />
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
+      <Sidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="main-area">
-        <Header title={title} />
+        <Header title={title} onMenuClick={() => setSidebarOpen(true)} />
         {children}
       </div>
     </div>

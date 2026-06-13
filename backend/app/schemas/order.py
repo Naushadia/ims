@@ -54,6 +54,7 @@ class OrderResponse(BaseModel):
     status: str
     total_amount: Decimal
     items: list[OrderItemResponse]
+    cancellation_reason: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -63,6 +64,12 @@ class OrderResponse(BaseModel):
 class OrderListResponse(BaseModel):
     data: list[OrderResponse]
     count: int
+
+
+class OrderStatusUpdate(BaseModel):
+    status: str
+    cancellation_reason: str | None = None
+
 
 
 # ── Dashboard schema ──────────────────────────────────────────────────────────

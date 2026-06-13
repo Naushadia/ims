@@ -193,3 +193,87 @@ async def get_dashboard_summary(db: AsyncSession) -> DashboardSummary:
             for p in low_stock_products
         ],
     )
+
+
+async def update_order_status(
+    db: AsyncSession, order_id: int, status: str, cancellation_reason: str | None = None
+) -> Order:
+    """
+    Update order status with business rules:
+    - Allowed transitions: pending -> confirmed, pending -> cancelled, confirmed -> completed, confirmed -> cancelled
+    - Restore stock on cancellation from pending or confirmed states
+    - Require remarks/reason for cancellation
+    """
+    async with db.begin():
+        # Get order
+        order_result = await db.execute(
+            select(Order)
+            .options(selectinload(Order.items))
+            .where(Order.id == order_id)
+            .with_for_update()
+        )
+        order = order_result.scalar_one_or_none()
+        if order is None:
+            raise AppError(
+                message=f"Order with ID {order_id} not found.",
+                code="ORDER_NOT_FOUND",
+                status_code=404,
+            )
+
+        old_status = order.status.lower()
+        new_status = status.lower()
+
+        if new_status not in ["pending", "confirmed", "completed", "cancelled"]:
+            raise AppError(
+                message=f"Invalid status '{status}'.",
+                code="INVALID_STATUS",
+                status_code=400,
+            )
+
+        if old_status == new_status:
+            return order
+
+        # Terminal state check
+        if old_status in ["completed", "cancelled"]:
+            raise AppError(
+                message=f"Cannot change status of a terminal '{old_status}' order.",
+                code="TERMINAL_STATE",
+                status_code=400,
+            )
+
+        # Transition validation
+        if old_status == "pending" and new_status == "completed":
+            raise AppError(
+                message="Cannot complete a pending order directly. Confirm it first.",
+                code="INVALID_TRANSITION",
+                status_code=400,
+            )
+
+        # Handle cancellation: restore stock
+        if new_status == "cancelled":
+            if not cancellation_reason or not cancellation_reason.strip():
+                raise AppError(
+                    message="Cancellation remarks/reason is required to cancel an order.",
+                    code="CANCELLATION_REMARKS_REQUIRED",
+                    status_code=400,
+                )
+            
+            # Restore stock
+            for item in order.items:
+                product_result = await db.execute(
+                    select(Product)
+                    .where(Product.id == item.product_id)
+                    .with_for_update()
+                )
+                product = product_result.scalar_one_or_none()
+                if product is not None:
+                    product.quantity += item.quantity
+            
+            order.cancellation_reason = cancellation_reason.strip()
+
+        order.status = new_status
+        # DB commits automatically upon leaving context manager db.begin()
+
+    # Re-fetch order with items and product detail
+    return await get_order_by_id(db, order.id)
+

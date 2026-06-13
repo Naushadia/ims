@@ -111,22 +111,30 @@ export default function Customers() {
                   <th>Full Name</th>
                   <th>Email</th>
                   <th>Phone</th>
+                  <th>Status</th>
                   <th>Joined</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr className="loading-row"><td colSpan={6}>Loading…</td></tr>
+                  <tr className="loading-row"><td colSpan={7}>Loading…</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={6} className="empty-state">No customers found.</td></tr>
+                  <tr><td colSpan={7} className="empty-state">No customers found.</td></tr>
                 ) : filtered.map((c, i) => (
                   <tr key={c.id}>
                     <td className="text-meta" style={{ fontSize: '12px' }}>{i + 1}</td>
                     <td style={{ fontWeight: 500 }}>{c.full_name}</td>
                     <td className="text-secondary">{c.email}</td>
                     <td className="text-meta">{c.phone || '—'}</td>
-                    <td className="text-meta" style={{ fontSize: '12px' }}>{relativeDate(c.created_at)}</td>
+                    <td>
+                      <span className={c.status === 'inactive' ? 'text-cancelled' : 'text-success'} style={{ fontWeight: 500 }}>
+                        {c.status ? c.status.charAt(0).toUpperCase() + c.status.slice(1).toLowerCase() : 'Active'}
+                      </span>
+                    </td>
+                    <td className="text-meta" style={{ fontSize: '12px' }} title={c.created_at ? `Created: ${new Date(c.created_at).toLocaleString('en-IN')}` : ''}>
+                      {relativeDate(c.created_at)}
+                    </td>
                     <td>
                       <button className="action-link action-link-delete" onClick={() => handleDelete(c)}>Delete</button>
                     </td>
