@@ -27,11 +27,9 @@ class OrderItem(Base):
     )
     quantity: Mapped[int] = mapped_column(nullable=False)
     unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
-    # Stored generated column — PostgreSQL computes and persists this
     subtotal: Mapped[Decimal] = mapped_column(
         Numeric(10, 2),
         Computed("quantity * unit_price", persisted=True),
-        init=False,
     )
 
     # Relationships
