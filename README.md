@@ -152,8 +152,8 @@ Add `frontend/vercel.json` for SPA routing:
 ### Docker Hub (for submission)
 
 ```bash
-docker build -t yourdockerhubusername/ims-backend:latest ./backend
-docker push yourdockerhubusername/ims-backend:latest
+docker build -t naushadia/ims-backend:latest ./backend
+docker push naushadia/ims-backend:latest
 ```
 
 ---

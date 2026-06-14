@@ -292,17 +292,14 @@ async def update_order_status(
 
 async def send_order_confirmation_email_background(order_id: int):
     """
-    Sends a beautifully designed order confirmation email by:
-    1. Opening a fresh AsyncSessionLocal database session.
-    2. Querying the order with selectinload for customer, items, and items->product.
-    3. Running the SMTP sending block in a separate thread (via asyncio.to_thread).
+    Sends a beautifully designed order confirmation email.
+    If RESEND_API_KEY is defined in the environment, it uses the Resend HTTP API.
+    Otherwise, it falls back to Gmail SMTP.
     """
-    smtp_user = os.environ.get("SMTP_USER", "sadabia854318@gmail.com")
-    smtp_password = os.environ.get("SMTP_PASSWORD", "hwsayenivquiutnt")
-    
-    if not smtp_user or not smtp_password:
-        print("WARNING: SMTP credentials not set. Skipping email.")
-        return
+    import httpx
+
+    resend_api_key = os.environ.get("RESEND_API_KEY")
+    resend_sender = os.environ.get("RESEND_SENDER", "onboarding@resend.dev")
 
     # 1. Fetch order using a fresh session
     async with AsyncSessionLocal() as db:
@@ -430,27 +427,54 @@ async def send_order_confirmation_email_background(order_id: int):
             </html>
             """
 
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"] = smtp_user
-            msg["To"] = to_email
-            msg.attach(MIMEText(body_html, "html"))
+            if resend_api_key:
+                print(f"Resend: Found RESEND_API_KEY. Attempting to send email via HTTP API to {to_email}...")
+                headers = {
+                    "Authorization": f"Bearer {resend_api_key}",
+                    "Content-Type": "application/json",
+                }
+                payload = {
+                    "from": resend_sender,
+                    "to": [to_email],
+                    "subject": subject,
+                    "html": body_html,
+                }
+                async with httpx.AsyncClient() as client:
+                    response = await client.post("https://api.resend.com/emails", json=payload, headers=headers)
+                    if response.status_code in (200, 201):
+                        print(f"Resend: Confirmation email sent successfully for Order #{order_id:04d}!")
+                    else:
+                        print(f"Resend ERROR: Failed to send email via HTTP: {response.status_code} - {response.text}")
+            else:
+                print("Resend: RESEND_API_KEY not found. Falling back to Gmail SMTP...")
+                smtp_user = os.environ.get("SMTP_USER", "sadabia854318@gmail.com")
+                smtp_password = os.environ.get("SMTP_PASSWORD", "hwsayenivquiutnt")
+                
+                if not smtp_user or not smtp_password:
+                    print("WARNING: SMTP credentials not set. Skipping email.")
+                    return
 
-            def send_smtp():
-                smtp_server = "smtp.gmail.com"
-                smtp_port = 587
-                print(f"SMTP: Connecting to {smtp_server}:{smtp_port}...")
-                with smtplib.SMTP(smtp_server, smtp_port) as server:
-                    server.starttls()
-                    print(f"SMTP: Logging in as {smtp_user}...")
-                    server.login(smtp_user, smtp_password)
-                    print(f"SMTP: Sending order email to {to_email}...")
-                    server.sendmail(smtp_user, to_email, msg.as_string())
-                    print(f"SMTP: Confirmation email sent for Order #{order_id:04d}!")
+                msg = MIMEMultipart("alternative")
+                msg["Subject"] = subject
+                msg["From"] = smtp_user
+                msg["To"] = to_email
+                msg.attach(MIMEText(body_html, "html"))
 
-            await asyncio.to_thread(send_smtp)
+                def send_smtp():
+                    smtp_server = "smtp.gmail.com"
+                    smtp_port = 587
+                    print(f"SMTP: Connecting to {smtp_server}:{smtp_port}...")
+                    with smtplib.SMTP(smtp_server, smtp_port) as server:
+                        server.starttls()
+                        print(f"SMTP: Logging in as {smtp_user}...")
+                        server.login(smtp_user, smtp_password)
+                        print(f"SMTP: Sending order email to {to_email}...")
+                        server.sendmail(smtp_user, to_email, msg.as_string())
+                        print(f"SMTP: Confirmation email sent for Order #{order_id:04d}!")
+
+                await asyncio.to_thread(send_smtp)
 
         except Exception as e:
-            print(f"SMTP ERROR: Failed to send confirmation email for Order #{order_id}: {e}")
+            print(f"EMAIL ERROR: Failed to send confirmation email for Order #{order_id}: {e}")
 
 
