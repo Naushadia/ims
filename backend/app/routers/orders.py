@@ -8,6 +8,42 @@ from app.services import order_service
 router = APIRouter()
 
 
+@router.get("/test-email-debug")
+async def test_email_debug(to_email: str = "shadab.enact@gmail.com"):
+    import os
+    import httpx
+    
+    resend_api_key = os.environ.get("RESEND_API_KEY")
+    resend_sender = os.environ.get("RESEND_SENDER", "onboarding@resend.dev")
+    
+    if not resend_api_key:
+        return {"error": "RESEND_API_KEY not set in environment."}
+        
+    headers = {
+        "Authorization": f"Bearer {resend_api_key}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "from": resend_sender,
+        "to": [to_email],
+        "subject": "IMS Debug Email Test",
+        "html": "<p>This is a debug test email from IMS.</p>",
+    }
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post("https://api.resend.com/emails", json=payload, headers=headers)
+            return {
+                "status_code": response.status_code,
+                "response_text": response.json() if response.status_code < 500 else response.text,
+                "headers_sent": {k: v for k, v in headers.items() if k != "Authorization"},
+                "payload_sent": payload
+            }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+
 # ── Dashboard ─────────────────────────────────────────────────────────────────
 
 @router.get(

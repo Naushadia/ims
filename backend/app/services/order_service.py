@@ -428,7 +428,7 @@ async def send_order_confirmation_email_background(order_id: int):
             """
 
             if resend_api_key:
-                print(f"Resend: Found RESEND_API_KEY. Attempting to send email via HTTP API to {to_email}...")
+                print(f"Resend: Found RESEND_API_KEY. Attempting to send email via HTTP API to {to_email}...", flush=True)
                 headers = {
                     "Authorization": f"Bearer {resend_api_key}",
                     "Content-Type": "application/json",
@@ -442,16 +442,16 @@ async def send_order_confirmation_email_background(order_id: int):
                 async with httpx.AsyncClient() as client:
                     response = await client.post("https://api.resend.com/emails", json=payload, headers=headers)
                     if response.status_code in (200, 201):
-                        print(f"Resend: Confirmation email sent successfully for Order #{order_id:04d}!")
+                        print(f"Resend: Confirmation email sent successfully for Order #{order_id:04d}!", flush=True)
                     else:
-                        print(f"Resend ERROR: Failed to send email via HTTP: {response.status_code} - {response.text}")
+                        print(f"Resend ERROR: Failed to send email via HTTP: {response.status_code} - {response.text}", flush=True)
             else:
-                print("Resend: RESEND_API_KEY not found. Falling back to Gmail SMTP...")
+                print("Resend: RESEND_API_KEY not found. Falling back to Gmail SMTP...", flush=True)
                 smtp_user = os.environ.get("SMTP_USER", "sadabia854318@gmail.com")
                 smtp_password = os.environ.get("SMTP_PASSWORD", "hwsayenivquiutnt")
                 
                 if not smtp_user or not smtp_password:
-                    print("WARNING: SMTP credentials not set. Skipping email.")
+                    print("WARNING: SMTP credentials not set. Skipping email.", flush=True)
                     return
 
                 msg = MIMEMultipart("alternative")
@@ -463,18 +463,18 @@ async def send_order_confirmation_email_background(order_id: int):
                 def send_smtp():
                     smtp_server = "smtp.gmail.com"
                     smtp_port = 587
-                    print(f"SMTP: Connecting to {smtp_server}:{smtp_port}...")
+                    print(f"SMTP: Connecting to {smtp_server}:{smtp_port}...", flush=True)
                     with smtplib.SMTP(smtp_server, smtp_port) as server:
                         server.starttls()
-                        print(f"SMTP: Logging in as {smtp_user}...")
+                        print(f"SMTP: Logging in as {smtp_user}...", flush=True)
                         server.login(smtp_user, smtp_password)
-                        print(f"SMTP: Sending order email to {to_email}...")
+                        print(f"SMTP: Sending order email to {to_email}...", flush=True)
                         server.sendmail(smtp_user, to_email, msg.as_string())
-                        print(f"SMTP: Confirmation email sent for Order #{order_id:04d}!")
+                        print(f"SMTP: Confirmation email sent for Order #{order_id:04d}!", flush=True)
 
                 await asyncio.to_thread(send_smtp)
 
         except Exception as e:
-            print(f"EMAIL ERROR: Failed to send confirmation email for Order #{order_id}: {e}")
+            print(f"EMAIL ERROR: Failed to send confirmation email for Order #{order_id}: {e}", flush=True)
 
 
