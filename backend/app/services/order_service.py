@@ -427,7 +427,36 @@ async def send_order_confirmation_email_background(order_id: int):
             </html>
             """
 
-            if resend_api_key:
+            email_webhook_url = os.environ.get("EMAIL_WEBHOOK_URL")
+
+            if email_webhook_url:
+                print(f"Webhook: Found EMAIL_WEBHOOK_URL. Attempting to send email payload to webhook for Order #{order_id:04d}...", flush=True)
+                payload = {
+                    "to_email": to_email,
+                    "customer_name": customer.full_name,
+                    "order_id": f"#{order.id:04d}",
+                    "total_amount": f"₹{float(order.total_amount):.2f}",
+                    "email_note": order.email_note or "",
+                    "subject": subject,
+                    "body_html": body_html,
+                    "items": [
+                        {
+                            "product_name": item.product.name if item.product else f"Product ID {item.product_id}",
+                            "sku": item.product.sku if item.product else "—",
+                            "price": float(item.unit_price),
+                            "quantity": item.quantity,
+                            "subtotal": float(item.unit_price * item.quantity)
+                        }
+                        for item in order.items
+                    ]
+                }
+                async with httpx.AsyncClient() as client:
+                    response = await client.post(email_webhook_url, json=payload)
+                    if response.status_code in (200, 201, 202):
+                        print(f"Webhook: Payload sent successfully for Order #{order_id:04d}! Status: {response.status_code}", flush=True)
+                    else:
+                        print(f"Webhook ERROR: Failed to send payload: {response.status_code} - {response.text}", flush=True)
+            elif resend_api_key:
                 print(f"Resend: Found RESEND_API_KEY. Attempting to send email via HTTP API to {to_email}...", flush=True)
                 headers = {
                     "Authorization": f"Bearer {resend_api_key}",

@@ -13,34 +13,69 @@ async def test_email_debug(to_email: str = "shadab.enact@gmail.com"):
     import os
     import httpx
     
+    email_webhook_url = os.environ.get("EMAIL_WEBHOOK_URL")
     resend_api_key = os.environ.get("RESEND_API_KEY")
     resend_sender = os.environ.get("RESEND_SENDER", "onboarding@resend.dev")
     
-    if not resend_api_key:
-        return {"error": "RESEND_API_KEY not set in environment."}
-        
-    headers = {
-        "Authorization": f"Bearer {resend_api_key}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "from": resend_sender,
-        "to": [to_email],
-        "subject": "IMS Debug Email Test",
-        "html": "<p>This is a debug test email from IMS.</p>",
-    }
-    
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post("https://api.resend.com/emails", json=payload, headers=headers)
-            return {
-                "status_code": response.status_code,
-                "response_text": response.json() if response.status_code < 500 else response.text,
-                "headers_sent": {k: v for k, v in headers.items() if k != "Authorization"},
-                "payload_sent": payload
-            }
-    except Exception as e:
-        return {"error": str(e)}
+    # 1. Test Webhook Driver if EMAIL_WEBHOOK_URL is set
+    if email_webhook_url:
+        payload = {
+            "to_email": to_email,
+            "customer_name": "Test User",
+            "order_id": "#0000",
+            "total_amount": "₹0.00",
+            "email_note": "This is a debug test via Webhook.",
+            "subject": "IMS Debug Webhook Test",
+            "body_html": "<p>This is a debug test email from IMS sent via Webhook.</p>",
+            "items": [
+                {
+                    "product_name": "Test Product",
+                    "sku": "TST-000",
+                    "price": 0.0,
+                    "quantity": 1,
+                    "subtotal": 0.0
+                }
+            ]
+        }
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(email_webhook_url, json=payload)
+                return {
+                    "driver_tested": "Webhook",
+                    "webhook_url": email_webhook_url,
+                    "status_code": response.status_code,
+                    "response_text": response.text,
+                    "payload_sent": payload
+                }
+        except Exception as e:
+            return {"driver_tested": "Webhook", "error": str(e)}
+
+    # 2. Otherwise test Resend HTTP API if RESEND_API_KEY is set
+    if resend_api_key:
+        headers = {
+            "Authorization": f"Bearer {resend_api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "from": resend_sender,
+            "to": [to_email],
+            "subject": "IMS Debug Email Test",
+            "html": "<p>This is a debug test email from IMS.</p>",
+        }
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post("https://api.resend.com/emails", json=payload, headers=headers)
+                return {
+                    "driver_tested": "Resend",
+                    "status_code": response.status_code,
+                    "response_text": response.json() if response.status_code < 500 else response.text,
+                    "headers_sent": {k: v for k, v in headers.items() if k != "Authorization"},
+                    "payload_sent": payload
+                }
+        except Exception as e:
+            return {"driver_tested": "Resend", "error": str(e)}
+
+    return {"error": "Neither EMAIL_WEBHOOK_URL nor RESEND_API_KEY is set in environment."}
 
 
 
