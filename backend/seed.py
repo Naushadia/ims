@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 # Ensure backend directory is in python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+from sqlalchemy import select
 from app.database import AsyncSessionLocal, engine
 from app.models.product import Product
 from app.models.customer import Customer
@@ -96,5 +97,4 @@ async def seed_data():
     print("Database seeding completed successfully!")
 
 if __name__ == "__main__":
-    from sqlalchemy.future import select
     asyncio.run(seed_data())
